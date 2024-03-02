@@ -3,11 +3,12 @@ import cv2
 def list_available_cameras():
     available_cameras = []
     index = 0
-    while True:
+    while index<10:
         print("checking camera ", index)
-        cap = cv2.VideoCapture(index)
-        if not cap.isOpened():
-            break
+        try:
+            cap = cv2.VideoCapture(index)
+        except:
+            print("camera ", index, " not found")
         ret, _ = cap.read()
         if ret:
             available_cameras.append(index)

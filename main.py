@@ -7,11 +7,12 @@ def track_ball(frame):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
     # Define range of blue color in HSV
-    lower_blue = np.array([110,50,50])
-    upper_blue = np.array([130,255,255])
+    lower_red = np.array([0, 100, 100])
+    upper_red = np.array([30,255,255])
 
     # Threshold the HSV image to get only blue colors
-    mask = cv2.inRange(hsv, lower_blue, upper_blue)
+    mask = cv2.inRange(hsv, lower_red, upper_red)
+    cv2.imshow('mask', mask)
 
     # Bitwise-AND mask and original image
     res = cv2.bitwise_and(frame,frame, mask= mask)
@@ -34,7 +35,7 @@ def track_ball(frame):
 # Main function
 def main():
     # Open the webcam
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(2)
 
     while(True):
         # Capture frame-by-frame
