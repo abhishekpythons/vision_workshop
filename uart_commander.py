@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
-
+import serial
+import RPi.GPIO as GPIO
 # Global variables for threshold box and previous ball position
 threshold_x = 200  # Threshold box x-coordinate
 threshold_y = 200  # Threshold box y-coordinate
@@ -12,7 +13,7 @@ prev_ball_y = None   # Previous ball y-coordinate
 is_inside = False
 
 # Function to detect and track the ball
-def track_ball(frame):
+def track_ball(frame, uart):
     global threshold_x, threshold_y, threshold_width, threshold_height, prev_ball_x, prev_ball_y
 
     # Convert BGR to HSV
@@ -57,29 +58,43 @@ def track_ball(frame):
         else:
             print("Ball is inside the threshold box! Stop the rover.")
             is_inside = True
+            # Transmit and receive bytes using UART
+            uart.write(b'Transmitting data')
+            received_data = uart.read(10)
+            print("Received data:", received_data)
 
         # Determine the direction of the ball with respect to the bounding box
-        direction = ""
+        direction = "stop"
         if prev_ball_x is not None and prev_ball_y is not None:
             if ball_x < threshold_x + threshold_width / 2:
-                direction += "Left"
+                direction = "left"
+                # Transmit bytes for left direction
+                uart.write(b'Left')
             elif ball_x > threshold_x + threshold_width / 2:
-                direction += "Right"
-            if ball_y < threshold_y + threshold_height / 2:
-                direction += "Up"
-            elif ball_y > threshold_y + threshold_height / 2:
-                direction += "Down"
+                direction = "right"
+                # Transmit bytes for right direction
+                uart.write(b'Right')
         prev_ball_x = ball_x
         prev_ball_y = ball_y
 
         # Print the direction
         if not is_inside:
-            print("Direction:", direction)
+            print(direction)
 
     return frame
 
 # Main function
 def main():
+    # Set up GPIO
+    GPIO.setmode(GPIO.BCM)
+    uart_pin1 = 17  # Example UART pin 1
+    uart_pin2 = 18  # Example UART pin 2
+    GPIO.setup(uart_pin1, GPIO.OUT)
+    GPIO.setup(uart_pin2, GPIO.OUT)
+
+    # Open the UART connection
+    uart = serial.Serial('/dev/ttyAMA0', 9600)  # Replace with your UART configuration
+
     # Open the webcam
     cap = cv2.VideoCapture(0)
 
@@ -88,7 +103,7 @@ def main():
         ret, frame = cap.read()
 
         # Track the ball
-        tracked_frame = track_ball(frame)
+        tracked_frame = track_ball(frame, uart)
 
         # Display the resulting frame
         cv2.imshow('Ball Tracking', tracked_frame)
@@ -97,9 +112,11 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    # When everything done, release the capture
+    # When everything done, release the capture, close UART, and clean up GPIO
     cap.release()
+    uart.close()
     cv2.destroyAllWindows()
+    GPIO.cleanup()
 
 if __name__ == "__main__":
     main()

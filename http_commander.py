@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import requests
 
 # Global variables for threshold box and previous ball position
 threshold_x = 200  # Threshold box x-coordinate
@@ -8,6 +9,7 @@ threshold_width = 200  # Threshold box width
 threshold_height = 200  # Threshold box height
 prev_ball_x = None   # Previous ball x-coordinate
 prev_ball_y = None   # Previous ball y-coordinate
+base_url = "http://192.168.4.1/"
 
 is_inside = False
 
@@ -57,24 +59,27 @@ def track_ball(frame):
         else:
             print("Ball is inside the threshold box! Stop the rover.")
             is_inside = True
+            # requests.get(base_url + "stop")
 
         # Determine the direction of the ball with respect to the bounding box
-        direction = ""
+        direction = "stop"
         if prev_ball_x is not None and prev_ball_y is not None:
             if ball_x < threshold_x + threshold_width / 2:
-                direction += "Left"
+                direction = "left"
+                requests.get(base_url + "left")
             elif ball_x > threshold_x + threshold_width / 2:
-                direction += "Right"
-            if ball_y < threshold_y + threshold_height / 2:
-                direction += "Up"
-            elif ball_y > threshold_y + threshold_height / 2:
-                direction += "Down"
+                direction = "right"
+                # requests.get(base_url + "right")
+            # if ball_y < threshold_y + threshold_height / 2:
+            #     direction += "Up"
+            # elif ball_y > threshold_y + threshold_height / 2:
+            #     direction += "Down"
         prev_ball_x = ball_x
         prev_ball_y = ball_y
 
         # Print the direction
         if not is_inside:
-            print("Direction:", direction)
+            print(base_url + direction)
 
     return frame
 
